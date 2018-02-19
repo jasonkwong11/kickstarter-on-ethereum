@@ -43,6 +43,28 @@ beforeEach(async () => {
   // we use the line 16 version, where we don't specify an address when we want
   // to deploy a new instance of the Contract
   // we use the line 36 version, when we already have a deployed contract and want
-  // to 
+  // to inform web3 of its existence.
+});
+
+describe('Campaigns', () => {
+  it('deploys a factory and a campaign', () => {
+    assert.ok(factory.options.address);
+    assert.ok(campaign.options.address);
+  });
+
+  it('marks caller as the campaign manager', async () => {
+    const manager = await campaign.methods.manager().call();
+    assert.equal(accounts[0], manager);
+  });
+
+  it('allows people to contribute money and marks them as approvers', async () => {
+    await campaign.methods.contribute().send({
+      value: '200',
+      from: accounts[1]
+    });
+
+    const isContributor = await campaign.methods.approvers(accounts[1]).call();
+    assert(isContributor);
+  });
 });
 
