@@ -66,5 +66,63 @@ describe('Campaigns', () => {
     const isContributor = await campaign.methods.approvers(accounts[1]).call();
     assert(isContributor);
   });
+
+  it('requires a minimum contribution', async() => {
+    try {
+      await campaign.methods.contribute().send({
+        value: '5',
+        from: accounts[1]
+      });
+      assert(false);
+    } catch (err) {
+      assert(err);
+    }
+  });
+
+  it('allows a manager to make a payment request', async () => {
+    await campaign.methods
+      .createRequest('Buy batteries', '100', accounts[1])
+      .send({
+        from: accounts[0],
+        gas: '1000000'
+      });
+      //^^ everytime we make a transaction to our function, we get no return value back
+      // so we have to reach back into our contract and retrieve the request
+      // that was just made
+    const request = await campaign.methods.requests(0).call();
+    //^^ zero above is the index of the request
+    assert.equal('Buy batteries', request.description);
+  });
+
+  //End to end test: take a campaign, contribute to it, create a request
+  // aprove the request, then finalize the request.
+  // then assert that some other party received the money
+
+  it('processes requests', async () => {
+    await campaign.methods.contribute().send({
+      from: accounts[0],
+      value: web3.utils.toWei('10', 'ether')
+    });
+
+    await campaign.methods
+      .createRequest('A', web3.utils.toWei('5', 'ether'), accounts[1])
+      .send({ from: accounts[0], gas: '1000000' });
+
+    await campaign.methods.approveRequest(0).send({
+      from: accounts[0],
+      gas: '1000000'
+    });
+
+    await campaign.methods.finalizeRequest(0).send({
+      from: accounts[0],
+      gas: '1000000'
+    });
+
+    let balance = await web3.eth.getBalance(accounts[1]);
+    balance = web3.utils.fromWei(balance, 'ether');
+    balance = parseFloat(balance);
+    console.log(balance);
+    assert(balance > 104);
+  });
 });
 
