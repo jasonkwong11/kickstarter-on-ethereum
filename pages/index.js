@@ -8,7 +8,6 @@ class CampaignIndex extends Component {
   static async getInitialProps() {
     const campaigns = await factory.methods.getDeployedCampaigns().call();
     return { campaigns };
-    //return { campaigns: campaigns };
   }
 
   renderCampaigns() {
